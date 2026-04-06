@@ -191,6 +191,16 @@
       <div class="steps" id="stepNav" style="margin-top:16px;margin-bottom:0;"></div>
     </div>
   </div>
+  <div id="nameCard" style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px 28px;margin-bottom:24px;">
+    <div style="font-family:'Poppins',sans-serif;font-weight:700;font-size:1.1rem;margin-bottom:6px;">Before you begin</div>
+    <p style="font-size:.875rem;line-height:1.7;color:var(--ink);margin-bottom:10px;">Welcome to Elevate Prep's free HSPT Diagnostic Score Report. Once you've completed the diagnostic test, use this tool to enter your answers and instantly receive a personalized score report and study plan that includes your raw scores, estimated national percentile ranges, and a section-by-section breakdown of exactly where to focus your prep.</p>
+    <p style="font-size:.875rem;line-height:1.7;color:var(--muted);margin-bottom:14px;">Enter your first name below to personalize your score report and PDF download.</p>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+      <input id="firstNameInput" type="text" placeholder="First name" value="" style="font-family:'Poppins',sans-serif;font-size:.9rem;padding:9px 14px;border:1.5px solid var(--border);border-radius:6px;outline:none;width:220px;color:var(--ink);transition:border-color .15s;" onfocus="this.style.borderColor='var(--purple)'" onblur="this.style.borderColor='var(--border)'" oninput="state.firstName=this.value.trim();saveState();" />
+      <span style="font-size:.8rem;color:var(--muted);">Optional — leave blank to skip</span>
+    </div>
+    <button class="btn btn-primary" onclick="state.currentStep=0;saveState();render();">Start Entering Answers →</button>
+  </div>
   <div id="introCard" style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;margin-bottom:24px;">
     <div style="font-family:'Poppins',sans-serif;font-weight:700;font-size:1.4rem;margin-bottom:10px;">Great job completing your HSPT Diagnostic Test!</div>
     <p style="font-size:.9rem;line-height:1.75;color:var(--ink);margin-bottom:14px;">The online score report below gives you a quick snapshot of how you performed across each section of the test — including your raw scores and estimated national percentile ranges — and generates a personalized study plan based on your results. Use it to get a feel for where you stand and where to focus next.</p>
@@ -201,7 +211,7 @@
       <li>A sub-section and question-type breakdown for each section, showing your accuracy by topic</li>
       <li>A question-by-question detail table for each section listing every question number, your answer, the correct answer, whether you got it right or wrong, and the sub-section and question type it belongs to</li>
     </ul>
-    <p style="font-size:.875rem;line-height:1.75;color:var(--muted);border-top:1px solid var(--border);padding-top:14px;margin-top:4px;"><strong style="color:var(--ink);">Why does this matter?</strong> The PDF is designed to help you and your tutor or parent identify exactly which question types you're strongest in and which ones need the most attention — so you can build a focused, efficient prep plan rather than studying everything equally. The more specific your prep, the better your results.</p>
+    <p style="font-size:.875rem;line-height:1.75;color:var(--muted);border-top:1px solid var(--border);padding-top:14px;margin-top:4px;"><strong style="color:var(--ink);">Why does this matter?</strong> The PDF is designed to help you and your tutor or parent identify exactly which question types you're strongest in and which ones need the most attention, so you can build a focused, efficient prep plan rather than studying everything equally. The more specific your prep, the better your results.</p>
   </div>
   <div id="instructionsCard" style="display:none;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px 28px;margin-bottom:24px;">
     <div style="font-family:'Poppins',sans-serif;font-weight:700;font-size:1.4rem;margin-bottom:10px;">Enter Your Answers</div>
@@ -1537,8 +1547,9 @@ function defaultAnswers() {
 }
 
 const state = {
-  currentStep: 0,
-  answers: defaultAnswers()
+  currentStep: -1,
+  answers: defaultAnswers(),
+  firstName: ''
 };
 
 // Load saved state
@@ -1553,8 +1564,9 @@ const state = {
           state.answers[s.id] = saved.answers[s.id];
         }
       });
-      if (typeof saved.currentStep === 'number') state.currentStep = saved.currentStep;
     }
+    if (typeof saved.firstName === 'string') state.firstName = saved.firstName;
+    // Always start at the name screen (step -1) regardless of saved state
   } catch(e) {}
 })();
 
@@ -1586,13 +1598,22 @@ function answeredCount(sectionId) {
 // ═══════════════════════════════════════════════
 function render() {
   renderNav();
-  if (state.currentStep < SECTIONS.length) {
+  const input = document.getElementById('firstNameInput');
+  if (input && state.firstName) input.value = state.firstName;
+  if (state.currentStep === -1) {
+    // Welcome / name entry screen
+    document.getElementById('reportHeaderContainer').style.display = 'none';
+    document.getElementById('nameCard').style.display = 'block';
+    document.getElementById('introCard').style.display = 'none';
+    document.getElementById('instructionsCard').style.display = 'none';
+    document.getElementById('stepNav').style.display = 'none';
+    document.getElementById('appContent').innerHTML = '';
+  } else if (state.currentStep < SECTIONS.length) {
     renderSection(SECTIONS[state.currentStep]);
   } else {
     renderReport();
   }
 }
-
 function renderNav() {
   const inSection = state.currentStep < SECTIONS.length;
   const navId = inSection ? 'stepNavInline' : 'stepNav';
@@ -1634,6 +1655,7 @@ function renderSection(section) {
 
   document.getElementById('reportHeaderContainer').style.display = 'none';
   document.getElementById('introCard').style.display = 'none';
+  document.getElementById('nameCard').style.display = 'none';
   document.getElementById('instructionsCard').style.display = 'block';
   document.getElementById('stepNav').style.display = 'none';
   document.getElementById('appContent').innerHTML = `
@@ -1680,7 +1702,7 @@ function clearSection(id) {
 }
 function resetAll() {
   if (confirm('Reset ALL answers and start over? This cannot be undone.')) {
-    Object.assign(state, { currentStep: 0, answers: defaultAnswers() });
+    Object.assign(state, { currentStep: -1, answers: defaultAnswers(), firstName: '' });
     localStorage.removeItem(STORAGE_KEY);
     render();
   }
@@ -1818,9 +1840,10 @@ function renderReport() {
   }).join('');
 
   document.getElementById('introCard').style.display = 'block';
+  document.getElementById('nameCard').style.display = 'none';
   document.getElementById('instructionsCard').style.display = 'none';
   document.getElementById('stepNav').style.display = 'flex';
-  document.getElementById('reportHeaderTitle').textContent = 'Score Report';
+  document.getElementById('reportHeaderTitle').textContent = state.firstName ? state.firstName + "'s Score Report" : 'Score Report';
   document.getElementById('reportHeaderMeta').innerHTML = 'HSPT Diagnostic Test &nbsp;&middot;&nbsp; ' + now + ' &nbsp;&middot;&nbsp; ' + totalCorrect + ' of ' + totalQs + ' correct';
   document.getElementById('reportHeaderContainer').style.display = 'block';
   document.getElementById('appContent').innerHTML = `
@@ -1851,23 +1874,7 @@ function renderReport() {
       </div>
     </div>
 
-    <div class="card" style="border:1px solid var(--border);border-left:4px solid #200582;background:white;">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;">
-        <div style="flex:1;min-width:220px;">
-          <div style="font-family:'Poppins',sans-serif;font-weight:700;font-size:1.25rem;margin-bottom:8px;">Ready to turn your results into real improvement?</div>
-          <p style="font-size:.875rem;line-height:1.75;color:var(--ink);margin-bottom:14px;">Now that you know exactly where you stand — and which question types need the most work — it's time to put that knowledge into action. Targeted practice is the fastest path to a higher HSPT score. That's why at Elevate Prep, we built a workbook designed specifically around the way this test is structured.</p>
-          <div style="font-size:.85rem;font-weight:700;color:var(--ink);margin-bottom:8px;">The Elevate Prep HSPT Workbook includes:</div>
-          <ul style="font-size:.85rem;line-height:1.8;color:var(--ink);padding-left:18px;margin-bottom:16px;">
-            <li>Practice problems for every section, sub-section, and question type covered on this diagnostic</li>
-            <li>Three full-length practice tests to build speed, stamina, and test-day confidence</li>
-            <li>Detailed content notes for the Verbal, Reading, and Language sections</li>
-            <li>A curated list of free online video resources covering every Quantitative and Math topic in the book</li>
-          </ul>
-          <p style="font-size:.85rem;line-height:1.75;color:var(--muted);margin-bottom:18px;">Whether you're aiming to hit a score threshold for a specific school or just want to walk in feeling prepared, this workbook gives you a clear, structured path to get there.</p>
-          <a href="https://amzn.to/4b8THUt" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:var(--ink);color:white;padding:11px 22px;border-radius:6px;font-family:'Poppins',sans-serif;font-size:.9rem;font-weight:600;text-decoration:none;transition:background .15s;" onmouseover="this.style.background='#333'" onmouseout="this.style.background='var(--ink)'">Learn more and get your copy →</a>
-        </div>
-      </div>
-    </div>
+
 
     <div class="card">
       <div class="card-title">Detailed Breakdown</div>
@@ -2029,9 +2036,17 @@ function generatePrepPlan() {
     ${renderTier('Reinforce', 'You have a solid base — targeted practice will push these higher', '#f0f4f7', '#3a6b8a', reinforce)}
     ${renderTier('Maintain', 'Strong scores — keep these sharp with lighter, regular practice', '#f0f7f4', '#00a86b', maintain)}
     <div style="margin-top:20px;background:white;border:1px solid var(--border);border-left:4px solid #200582;border-radius:10px;padding:18px 20px;">
-      <div style="font-family:'Poppins',sans-serif;font-weight:700;font-size:1.1rem;margin-bottom:8px;">Put It Into Practice</div>
-      <p style="font-size:.875rem;line-height:1.75;color:var(--ink);margin-bottom:12px;">Ready to start working on your priority areas? Elevate Prep's HSPT Workbook includes targeted practice problems for every section, sub-section, and question type on this diagnostic — so you can drill exactly the topics your study plan identified above. Once you've worked through your weak spots, the workbook's three full-length practice tests are designed to be taken under timed conditions to measure how much you've improved. Each test mirrors the format, length, and difficulty of the real HSPT — perfect for building stamina and getting comfortable with test-day conditions.</p>
-      <a href="https://amzn.to/4b8THUt" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:var(--ink);color:white;padding:10px 20px;border-radius:6px;font-family:'Poppins',sans-serif;font-size:.875rem;font-weight:600;text-decoration:none;" onmouseover="this.style.background='#333'" onmouseout="this.style.background='var(--ink)'">Get the Workbook →</a>
+      <div style="font-family:'Poppins',sans-serif;font-weight:700;font-size:1.25rem;margin-bottom:8px;">Ready to turn your results into real improvement?</div>
+      <p style="font-size:.875rem;line-height:1.75;color:var(--ink);margin-bottom:14px;">Now that you know exactly where you stand, and which question types need the most work, it's time to put that knowledge into action. Targeted practice is the fastest path to a higher HSPT score. That's why at Elevate Prep, we created a workbook designed specifically around the way this test is structured.</p>
+      <div style="font-size:.85rem;font-weight:700;color:var(--ink);margin-bottom:8px;">Elevate Prep's HSPT Workbook includes the following:</div>
+      <ul style="font-size:.85rem;line-height:1.8;color:var(--ink);padding-left:18px;margin-bottom:16px;">
+        <li>Over 2,500 practice questions for every section, sub-section, and question type covered on this diagnostic</li>
+        <li>Three full-length practice tests to build speed, stamina, and test-day confidence</li>
+        <li>Detailed content notes for the Verbal, Reading, and Language sections</li>
+        <li>A curated list of free online video resources covering every Quantitative and Math topic in the book</li>
+      </ul>
+      <p style="font-size:.85rem;line-height:1.75;color:var(--muted);margin-bottom:18px;">Whether you're aiming to hit a score threshold for a specific school or just want to walk into test day feeling prepared, this workbook gives you a clear, structured path to get there.</p>
+      <a href="https://amzn.to/4rAnOKz" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:var(--ink);color:white;padding:11px 22px;border-radius:6px;font-family:'Poppins',sans-serif;font-size:.9rem;font-weight:600;text-decoration:none;transition:background .15s;" onmouseover="this.style.background='#333'" onmouseout="this.style.background='var(--ink)'">Learn more and get your copy →</a>
     </div>`;
 
   document.getElementById('prepPlanOutput').innerHTML = html;
@@ -2095,7 +2110,10 @@ function downloadPDF() {
     const ftLogoW = 22, ftLogoH = 22 * (258/1638);
     doc.addImage(LOGO_BLACK, 'PNG', ML, PH - 12 + (10 - ftLogoH) / 2, ftLogoW, ftLogoH);
     sf('normal', 6.5, C.muted);
-    doc.text('elevateprep.com  \u00b7  Page ' + pg, PW/2, PH - 6.5, {align:'center'});
+    doc.text('elevateprep.com', ML + 26, PH - 6.5);
+    const centerLabel = state.firstName ? state.firstName + "\u2019s HSPT Diagnostic" : 'HSPT Diagnostic';
+    doc.text(centerLabel, PW/2, PH - 6.5, {align:'center'});
+    doc.text('Page ' + pg + ' of {totalPages}', PW - MR, PH - 6.5, {align:'right'});
   }
 
   // Compute scores
@@ -2196,7 +2214,7 @@ function downloadPDF() {
   // Header bar
   fillRect(0, 0, PW, 30, C.ink);
   sf('bold', 16, C.white);  doc.text('HSPT Diagnostic Test', ML, 10);
-  sf('normal', 8.5, [170,164,158]); doc.text('Score Report  \u00b7  '+now, ML, 17.5);
+  sf('normal', 8.5, [170,164,158]); doc.text('Score Report  \u00b7  '+(state.firstName ? state.firstName + '  \u00b7  ' : '')+now, ML, 17.5);
   sf('normal', 8, [170,164,158]); doc.text(totalCorrect+'/'+totalQs+' correct', PW-ML, 17.5, {align:'right'});
   // White logo — top right, larger
   const ep1LogoW = 38, ep1LogoH = 38 * (258/1638);
@@ -2269,12 +2287,12 @@ function downloadPDF() {
   y += 4;
 
   // Understanding Your Percentiles note
-  fillRect(ML, y, CW, 10, [245,245,245]);
-  doc.setDrawColor(100,140,200); doc.setLineWidth(0.3); doc.rect(ML, y, CW, 10);
+  fillRect(ML, y, CW, 14, [245,245,245]);
+  doc.setDrawColor(100,140,200); doc.setLineWidth(0.3); doc.rect(ML, y, CW, 14);
   sf('bold', 7, C.ink); doc.text('About These Percentiles', ML+3, y+4.5);
   sf('normal', 6.2, C.ink);
-  doc.text('Ranges shown are national HSPT percentile estimates. Local percentiles at selective schools may differ. See full report for details.', ML+3, y+8.5);
-  y += 16;
+  doc.text('Percentile ranges are national HSPT estimates based on data collected from official score reports. Local percentiles at selective schools may be lower. Ranges reflect year-to-year variability and should not be treated as exact rankings.', ML+3, y+8.5, {maxWidth: CW-6});
+  y += 20;
 
   // Sub-section summary
   sf('bold', 10, C.ink); doc.text('Sub-section Summary', ML, y); y+=5;
@@ -2448,16 +2466,18 @@ function downloadPDF() {
   y += 14;
 
   // Workbook CTA box — charcoal background like page headers
-  checkPage(14);
-  const ctaH = 13;
+  checkPage(16);
+  const ctaH = 16;
   fillRect(ML, y, CW, ctaH, C.ink);
 
-  sf('bold', 10, C.white);
-  doc.text('Ready to start?', ML + 5, y + 5);
-  sf('normal', 8, C.white);
-  doc.text('Our HSPT Workbook covers every topic in your study plan.', ML + 5, y + 10);
-  sf('bold', 10, C.white);
-  doc.textWithLink('elevateprep.com/hspt', PW - MR - 4, y + 7.5, { align: 'right', url: 'https://www.elevateprep.com/hspt' });
+  sf('bold', 9, C.white);
+  doc.text("Ready to turn your results into real improvement?", ML + 5, y + 6);
+  sf('normal', 7.5, C.white);
+  doc.text("Our HSPT Workbook includes 2,500+ practice questions, full-length tests & more.", ML + 5, y + 12, {maxWidth: CW - 50});
+  sf('bold', 7.5, C.white);
+  doc.textWithLink('Click here to get your copy', PW - MR - 4, y + 6, { align: 'right', url: 'https://amzn.to/4rAnOKz' });
+  sf('normal', 7, C.white);
+  doc.textWithLink('elevateprep.com/hspt', PW - MR - 4, y + 11.5, { align: 'right', url: 'https://www.elevateprep.com/hspt' });
   y += ctaH + 6;
 
   addPageFooter();
@@ -2560,7 +2580,18 @@ function downloadPDF() {
     addPageFooter();
   });
 
-  doc.save('HSPT-Practice-Test-A-Score-Report.pdf');
+  const pdfName = state.firstName ? state.firstName + '-HSPT-Diagnostic-Score-Report.pdf' : 'HSPT-Diagnostic-Score-Report.pdf';
+  // Fix total pages placeholder
+  const totalPages = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    // Cover the placeholder with white then rewrite
+    doc.setFillColor(255,255,255);
+    doc.rect(PW - MR - 25, PH - 10, 25, 8, 'F');
+    sf('normal', 6.5, C.muted);
+    doc.text('Page ' + i + ' of ' + totalPages, PW - MR, PH - 6.5, {align:'right'});
+  }
+  doc.save(pdfName);
 }
 
 function toggleSection(id) {
