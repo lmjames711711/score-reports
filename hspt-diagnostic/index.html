@@ -22,7 +22,7 @@
     font-size: 15px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--ink); font-family: 'Poppins', sans-serif; min-height: 100vh; }
+  body { background: var(--bg); color: var(--ink); font-family: 'Poppins', sans-serif; min-height: 100vh; overflow-x: hidden; }
 
   /* ── Header ── */
   header {
@@ -40,7 +40,7 @@
   .save-indicator.show { opacity: 1; }
 
   /* ── Layout ── */
-  .app { max-width: 860px; margin: 0 auto; padding: 32px 20px 60px; }
+  .app { max-width: 860px; margin: 0 auto; padding: 32px 20px 60px; overflow-x: hidden; }
 
   /* ── Steps ── */
   .steps { display: flex; gap: 8px; margin-top: 16px; margin-bottom: 24px; flex-wrap: wrap; }
@@ -171,8 +171,12 @@
     .section-content { display: block !important; }
   }
   @media (max-width: 600px) {
-    .bubble-grid { grid-template-columns: 1fr 1fr; }
+    .bubble-grid { grid-template-columns: 1fr 1fr; grid-auto-flow: row; overflow-x: hidden; }
     .section-scores .score-chip { flex: 0 0 calc(50% - 6px); max-width: calc(50% - 6px); }
+    .card { padding: 16px; overflow-x: hidden; }
+    .subsection-table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .mini-bar { min-width: 50px; }
+    .bubble-row { flex-wrap: nowrap; }
   }
 </style>
 </head>
@@ -2045,7 +2049,7 @@ function generatePrepPlan() {
         <li>Detailed content notes for the Verbal, Reading, and Language sections</li>
         <li>A curated list of free online video resources covering every Quantitative and Math topic in the book</li>
       </ul>
-      <p style="font-size:.85rem;line-height:1.75;color:var(--muted);margin-bottom:18px;">Whether you're aiming for a specific score or just want to walk into test day feeling prepared, this workbook gives you a clear, structured path to get there.</p>
+      <p style="font-size:.85rem;line-height:1.75;color:var(--muted);margin-bottom:18px;">Whether you're aiming to hit a score threshold for a specific school or just want to walk into test day feeling prepared, this workbook gives you a clear, structured path to get there.</p>
       <a href="https://amzn.to/4rAnOKz" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:var(--ink);color:white;padding:11px 22px;border-radius:6px;font-family:'Poppins',sans-serif;font-size:.9rem;font-weight:600;text-decoration:none;transition:background .15s;" onmouseover="this.style.background='#333'" onmouseout="this.style.background='var(--ink)'">Learn more and get your copy →</a>
     </div>`;
 
